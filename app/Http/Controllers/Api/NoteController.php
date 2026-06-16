@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UpdateNoteRequest;
 use App\Services\NoteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -87,13 +86,20 @@ class NoteController extends Controller
         }
     }
 
-    public function update(UpdateNoteRequest $request, string $slug)
+    public function update(Request $request, string $slug)
     {
         try {
+            $validated = $request->validate([
+                'title' => 'sometimes|required|string|max:255',
+                'body' => 'sometimes|required|string',
+                'category_id' => 'sometimes|required|exists:categories,id',
+                'is_indexed' => 'sometimes|boolean'
+            ]);
+
             $note = $this->noteService->getNoteBySlug($slug);
 
             $updatedNote = $this->noteService->updateNote(
-                $request->validated(), 
+                $validated, 
                 $note, 
                 Auth::id()
             );

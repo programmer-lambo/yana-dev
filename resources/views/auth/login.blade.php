@@ -1,47 +1,90 @@
 <x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <div class="w-full max-w-md bg-white rounded-xl shadow p-8" x-data="loginPage()">
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+        <h1 class="text-2xl font-bold text-center mb-6">Login</h1>
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <template x-if="error">
+            <div class="bg-red-50 border border-red-300 text-red-700 rounded px-4 py-3 mb-4 text-sm" x-text="error">
+            </div>
+        </template>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" x-model="form.email" placeholder="email@example.com"
+                    class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    :class="errors.email ? 'border-red-400' : 'border-gray-300'" />
+                <p class="text-red-500 text-xs mt-1" x-text="errors.email" x-show="errors.email"></p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" x-model="form.password" placeholder="••••••••"
+                    class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    :class="errors.password ? 'border-red-400' : 'border-gray-300'" @keyup.enter="submit" />
+                <p class="text-red-500 text-xs mt-1" x-text="errors.password" x-show="errors.password"></p>
+            </div>
+
+            <button @click="submit" :disabled="loading"
+                class="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition">
+                <span x-show="!loading">Masuk</span>
+                <span x-show="loading">Memproses...</span>
+            </button>
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Belum punya akun?
+            <a href="{{ route('register') }}" class="text-blue-600 hover:underline font-medium">Daftar di sini</a>
+        </p>
+    </div>
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+    <script>
+        function loginPage() {
+            return {
+                form: { email: '', password: '' },
+                errors: {},
+                error: null,
+                loading: false,
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+                async submit() {
+                    this.errors = {};
+                    this.error = null;
+                    this.loading = true;
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+                    try {
+                        const res = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify(this.form)
+                        });
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+                        const data = await res.json();
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
+                        if (res.status === 422) {
+                            this.errors = data.errors ?? {};
+                            return;
+                        }
+
+                        if (!res.ok) {
+                            this.error = data.message ?? 'Login gagal, coba lagi.';
+                            return;
+                        }
+
+                        localStorage.setItem('token', data.access_token);
+                        localStorage.setItem('user', JSON.stringify(data.data));
+
+                        window.location.href = '/dashboard';
+
+                    } catch (err) {
+                        this.error = 'Terjadi kesalahan, coba lagi.';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
+        }
+    </script>
 </x-guest-layout>
