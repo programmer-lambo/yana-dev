@@ -71,6 +71,8 @@
             Sudah punya akun?
             <a href="{{ route('login') }}" class="text-blue-600 hover:underline font-medium">Login di sini</a>
         </p>
+
+        <x-footer />
     </div>
 
     <script>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\NoteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class NoteController extends Controller
@@ -17,15 +18,17 @@ class NoteController extends Controller
         $this->noteService = $noteService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $note = $this->noteService->getAllSearchable();
+            $page = $request->query('page', 1);
+
+            $notes = $this->noteService->getAllSearchable((int) $page);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Detail catatan berhasil ditemukan.',
-                'data' => $note
+                'data' => $notes
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -138,12 +141,13 @@ class NoteController extends Controller
         }
     }
 
-    public function getByAuthor(string $authorId)
+    public function getByAuthor(string $authorId, Request $request)
     {
         try {
+            $page = $request->query('page', 1);
             $currentUserId = Auth::guard('sanctum')->id(); 
 
-            $notes = $this->noteService->getNotesByAuthorId((int) $authorId, $currentUserId);
+            $notes = $this->noteService->getNotesByAuthorId((int) $authorId, $currentUserId, (int) $page);
 
             return response()->json([
                 'success' => true,
@@ -151,6 +155,24 @@ class NoteController extends Controller
                 'data' => $notes
             ], 200);
 
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], $e->getCode() ?: 400);
+        }
+    }
+
+    public function showNotes(string $id, Request $request)
+    {
+        try {
+            $page = $request->query('page', 1);
+            $notes = $this->noteService->getNotesByCategoryId((int) $id, (int) $page);
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar catatan berdasarkan kategori berhasil ditemukan.',
+                'data' => $notes
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

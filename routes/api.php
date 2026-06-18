@@ -29,7 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::prefix("/categories")->group(function(){
         Route::get('', [CategoryController::class, 'index']);
-        Route::get('/{id}/notes', [CategoryController::class, 'showNotes']);
+        Route::get('/{id}/notes', [NoteController::class, 'showNotes']);
     });
 
     Route::prefix("/authors")->group(function() {

@@ -36,6 +36,8 @@
             Belum punya akun?
             <a href="{{ route('register') }}" class="text-blue-600 hover:underline font-medium">Daftar di sini</a>
         </p>
+
+        <x-footer />
     </div>
 
     <script>

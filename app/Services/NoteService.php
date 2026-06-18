@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Note;
 use App\Models\User;
+use App\Models\Category;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -14,18 +16,65 @@ class NoteService
     {
         $slugTitle = Str::slug($title);
         $hash = substr(hash('sha256', $slugTitle . '-' . $timestamp), 0, 16);
-        // $hash = hash('sha256', $stringToHash);
 
         return $slugTitle . '-' . $hash;
     }
 
 
-    public function getAllSearchable()
+    private function transformNote(Note $note, bool $bypassTruncation = false)
     {
-        return Note::with(['author:id,name', 'category:id,name'])
+        $note->uploaded_at = $note->created_at->translatedFormat('l, d F Y, H:i');
+        $note->last_edited_at = $note->updated_at->translatedFormat('l, d F Y, H:i');
+
+        unset($note->created_at);
+        unset($note->updated_at);
+        unset($note->category_id);
+        unset($note->author_id);
+
+        if (!$bypassTruncation && $note->body !== null) {
+            $wordCount = Str::wordCount($note->body);
+
+            if ($wordCount >= 50) {
+                $note->body = Str::words($note->body, 30, '...');
+            } else {
+                $note->body = null;
+            }
+        }
+
+        return $note;
+    }
+
+    private function formatPaginatorOutput(LengthAwarePaginator $paginator)
+    {
+        return [
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total_data'   => $paginator->total(),
+            ],
+            'links' => [
+                'first_page_url' => $paginator->url(1),
+                'last_page_url'  => $paginator->url($paginator->lastPage()),
+                'next_page_url'  => $paginator->nextPageUrl(),
+                'prev_page_url'  => $paginator->previousPageUrl(),
+            ],
+            'notes' => $paginator->items()
+        ];
+    }
+
+    public function getAllSearchable(?int $page = null)
+    {
+        $paginator = Note::with(['author:id,name', 'category:id,name'])
             ->where('is_indexed', true)
             ->latest()
-            ->get();
+            ->paginate(10, ['*'], 'page', $page);
+
+        $paginator->through(function ($note) {
+            return $this->transformNote($note, false);
+        });
+
+        return $this->formatPaginatorOutput($paginator);
     }
 
     public function getNoteBySlug(string $slug)
@@ -33,6 +82,14 @@ class NoteService
         $note = Note::with(['author:id,name', 'category:id,name'])
                 ->where('slug', $slug)
                 ->first();
+
+        $note->uploaded_at = $note->created_at->translatedFormat('l, d F Y, H:i');
+        $note->last_edited_at = $note->updated_at->translatedFormat('l, d F Y, H:i');
+
+        unset($note->created_at);
+        unset($note->updated_at);
+        unset($note->category_id);
+        unset($note->author_id);
 
         if (!$note) {
             throw new \Exception("Note tidak ditemukan.", 404);
@@ -71,7 +128,7 @@ class NoteService
         return $note->delete();
     }
 
-    public function getNotesByAuthorId(int $authorId, ?int $currentUserId)
+    public function getNotesByAuthorId(int $authorId, ?int $currentUserId, ?int $page = null)
     {
         $authorExists = User::where('id', "=", $authorId)->exists();
         if (!$authorExists) {
@@ -79,41 +136,52 @@ class NoteService
         }
 
         $isMutualFollowing = false;
-    
         if ($currentUserId) {
-            // 🚀 JIKA YANG AKSES ADALAH AUTHOR-NYA SENDIRI:
             if ($currentUserId === $authorId) {
                 $isMutualFollowing = true;
             } else {
-                // Jika orang lain, baru jalankan kueri cek saling follow
-                $youFollowAuthor = DB::table('followings')
-                    ->where('follower_id', $currentUserId)
-                    ->where('following_id', $authorId)
-                    ->exists();
-
-                $authorFollowsYou = DB::table('followings')
-                    ->where('follower_id', $authorId)
-                    ->where('following_id', $currentUserId)
-                    ->exists();
-
+                $youFollowAuthor = DB::table('followings')->where('follower_id', $currentUserId)->where('following_id', $authorId)->exists();
+                $authorFollowsYou = DB::table('followings')->where('follower_id', $authorId)->where('following_id', $currentUserId)->exists();
                 $isMutualFollowing = $youFollowAuthor && $authorFollowsYou;
             }
         }
 
-        $notes = Note::with(['author:id,name', 'category:id,name'])
+        $paginator = Note::with(['author:id,name', 'category:id,name'])
             ->where('author_id', $authorId)
             ->latest()
-            ->get();
+            ->paginate(10, ['*'], 'page', $page);
 
-        $processedNotes = $notes->map(function ($note) use ($isMutualFollowing) {
+        $paginator->through(function ($note) use ($isMutualFollowing) {
             if (!$isMutualFollowing && !$note->is_indexed) {
                 $note->body = null;
                 $note->slug = null;
+                return $this->transformNote($note, true); 
             }
-            
-            return $note;
+
+            $bypassTruncation = $isMutualFollowing; 
+            return $this->transformNote($note, $bypassTruncation);
         });
 
-        return $processedNotes;
+        return $this->formatPaginatorOutput($paginator);
+    }
+
+    public function getNotesByCategoryId(int $categoryId, ?int $page = null)
+    {
+        $categoryExists = Category::where('id', "=", $categoryId)->exists();
+        if (!$categoryExists) {
+            throw new \Exception("Kategori tidak ditemukan.", 404);
+        }
+
+        $paginator = Note::with(['author:id,name', 'category:id,name'])
+            ->where('category_id', $categoryId)
+            ->where('is_indexed', true)
+            ->latest()
+            ->paginate(10, ['*'], 'page', $page);
+
+        $paginator->through(function ($note) {
+            return $this->transformNote($note, false);
+        });
+
+        return $this->formatPaginatorOutput($paginator);
     }
 }

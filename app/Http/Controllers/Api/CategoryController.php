@@ -33,22 +33,4 @@ class CategoryController extends Controller
             ], 500);
         }
     }
-
-    // 2. Ambil daftar artikel berdasarkan ID Kategori
-    public function showNotes($id)
-    {
-        try {
-            $notes = $this->categoryService->getNotesByCategoryId((int) $id);
-            return response()->json([
-                'success' => true,
-                'message' => 'Daftar catatan berdasarkan kategori berhasil ditemukan.',
-                'data' => $notes
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], $e->getCode() ?: 400);
-        }
-    }
 }

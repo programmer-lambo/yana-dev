@@ -9,9 +9,17 @@ Route::view("/register", "auth.register")->name("register");
 Route::view("/", "dashboard")->name("dashboard");
 Route::view("/dashboard", "dashboard")->name("dashboard");
 
-Route::get('/notes/{slug}', function(){ 
-    return view('notes.show');
-})->name('notes.show');
+Route::view('/notes/{slug}', 'notes.show')->name('notes.show');
+Route::view('/categories', 'categories.index')->name('categories.index');;
+Route::view('/categories/{id}/notes', 'categories.notes')->name('categories.notes');;
+Route::view('/authors/{id}/notes','notes.listByAuthor')->name('notes.listByAuthor');
+
+// Route::get('/notes/{slug}', function(){ 
+//     return view('notes.show');
+// })->name('notes.show');
+
+// Route::get('/categories', fn() => view('categories.index'))->name('categories.index');
+// Route::get('/categories/{id}/notes', fn() => view('categories.notes'))->name('categories.notes');
 
 Route::post('/logout', function () {
     Auth::logout();
