@@ -35,4 +35,59 @@ class UserService
             return ['status' => 'followed', 'message' => 'Berhasil mengikuti author ini!'];
         }
     }
+
+    public function getAuthorStatsAndStatus(int $authorId, ?int $currentUserId)
+    {
+        $author = User::find($authorId);
+        if (!$author) {
+            throw new \Exception("Author tidak ditemukan.", 404);
+        }
+
+        $followersCount = DB::table('followings')->where('following_id', $authorId)->count();
+        $followingCount = DB::table('followings')->where('follower_id', $authorId)->count();
+        $notesCount     = DB::table('notes')->where('author_id', $authorId)->count();
+
+        $isFollowing = false;
+        if ($currentUserId) {
+            $isFollowing = DB::table('followings')
+                ->where('follower_id', $currentUserId)
+                ->where('following_id', $authorId)
+                ->exists();
+        }
+
+        return [
+            'author_id'   => $authorId,
+            'author_name' => $author->name,
+            'stats' => [
+                'followers_count' => $followersCount,
+                'following_count' => $followingCount,
+                'notes_count'     => $notesCount,
+            ],
+            'auth_user_status' => [
+                'is_following' => $isFollowing,
+            ]
+        ];
+    }
+
+    public function getCurrentUserStatsAndStatus(int $currentUserId)
+    {
+        $author = User::find($currentUserId);
+        if (!$author) {
+            throw new \Exception("Author tidak ditemukan.", 404);
+        }
+
+        $followersCount = DB::table('followings')->where('following_id', $currentUserId)->count();
+        $followingCount = DB::table('followings')->where('follower_id', $currentUserId)->count();
+        $notesCount     = DB::table('notes')->where('author_id', $currentUserId)->count();
+
+        return [
+            'author_id'   => $currentUserId,
+            'author_name' => $author->name,
+            'stats' => [
+                'followers_count' => $followersCount,
+                'following_count' => $followingCount,
+                'notes_count'     => $notesCount,
+            ]
+        ];
+    }
 }

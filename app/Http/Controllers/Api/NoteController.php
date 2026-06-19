@@ -103,7 +103,7 @@ class NoteController extends Controller
 
             $updatedNote = $this->noteService->updateNote(
                 $validated, 
-                $note, 
+                $note->id, 
                 Auth::id()
             );
 
@@ -114,10 +114,14 @@ class NoteController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            $statusCode = is_int($e->getCode()) && $e->getCode() >= 100 && $e->getCode() < 600 
+                ? $e->getCode() 
+                : 500;
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], $statusCode);
         }
     }
 
@@ -178,6 +182,21 @@ class NoteController extends Controller
                 'success' => false,
                 'message' => $e->getMessage()
             ], $e->getCode() ?: 400);
+        }
+    }
+
+    public function myNotes()
+    {
+        try {
+            $notes = $this->noteService->getMyManageableNotes(Auth::id());
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar catatan Anda berhasil dimuat.',
+                'data' => $notes
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
 }

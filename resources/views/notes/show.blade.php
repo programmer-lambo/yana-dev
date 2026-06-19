@@ -35,7 +35,7 @@
             <template x-if="error">
                 <div class="bg-red-50 border border-red-300 text-red-700 rounded px-4 py-3">
                     <p x-text="error"></p>
-                    <a href="/dashboard" class="text-sm underline mt-2 inline-block">← Kembali ke Dashboard</a>
+                    <a href="/home" class="text-sm underline mt-2 inline-block">← Kembali ke Homepage</a>
                 </div>
             </template>
 
@@ -43,9 +43,9 @@
                 <article class="bg-white rounded-xl p-8 shadow">
 
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-xs font-medium bg-blue-100 text-blue-600 px-3 py-1 rounded-full"
-                            x-text="note.category?.name ?? 'Uncategorized'"></span>
-                        <a href="/dashboard" class="text-sm text-gray-400 hover:text-gray-600">← Kembali</a>
+                        <a :href="`/categories/${note.category?.id}/notes`" class="text-xs font-medium bg-blue-100 text-blue-600 px-3 py-1 rounded-full"
+                            x-text="note.category?.name ?? 'Uncategorized'"></a>
+                        <a href="/home" class="text-sm text-gray-400 hover:text-gray-600">← Kembali</a>
                     </div>
 
                     <h1 class="text-2xl font-bold text-gray-800 mb-3" x-text="note.title"></h1>

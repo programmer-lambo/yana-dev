@@ -33,4 +33,21 @@ class UserController extends Controller
             ], $e->getCode() ?: 400);
         }
     }
+
+    public function myFollowStats()
+    {
+        try {
+            $currentUserId = request()->user('sanctum') ? request()->user('sanctum')->id : null;
+
+            $data = $this->userService->getCurrentUserStatsAndStatus($currentUserId);
+
+            return response()->json([
+                'success' => true,
+                'data'    => $data
+            ], 200);
+        } catch (\Exception $e) {
+            $statusCode = $e->getCode() == 404 ? 404 : 400;
+            return response()->json(['success' => false, 'message' => $e->getMessage()], $statusCode);
+        }
+    }
 }

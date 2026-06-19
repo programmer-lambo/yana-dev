@@ -78,7 +78,7 @@
                         localStorage.setItem('token', data.access_token);
                         localStorage.setItem('user', JSON.stringify(data.data));
 
-                        window.location.href = '/dashboard';
+                        window.location.href = '/home';
 
                     } catch (err) {
                         this.error = 'Terjadi kesalahan, coba lagi.';

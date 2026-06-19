@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Category;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class NoteService
@@ -89,7 +90,7 @@ class NoteService
         unset($note->created_at);
         unset($note->updated_at);
         unset($note->category_id);
-        unset($note->author_id);
+        // unset($note->author_id);
 
         if (!$note) {
             throw new \Exception("Note tidak ditemukan.", 404);
@@ -109,14 +110,19 @@ class NoteService
         return Note::create($data);
     }
 
-    public function updateNote(array $data, object $note, int $authorId)
+    public function updateNote(array $data, int $noteId, int $authorId)
     {
+        $note = Note::findOrFail($noteId);
+
         if ($note->author_id !== $authorId) {
             throw new \Exception("Kamu tidak memiliki akses untuk mengubah catatan ini.", 403);
         }
 
-        $note->update($data);
-        return $note;
+        $note->update($data); 
+
+        $note->load(['author:id,name', 'category:id,name']);
+
+        return $this->transformNote($note);
     }
 
     public function deleteNote(object $note, int $authorId)
@@ -184,4 +190,19 @@ class NoteService
 
         return $this->formatPaginatorOutput($paginator);
     }
+
+    public function getMyManageableNotes(int $currentUserId, ?int $page = null)
+    {
+        $paginator = Note::with(['author:id,name', 'category:id,name'])
+            ->where('author_id', $currentUserId)
+            ->latest()
+            ->paginate(10, ['*'], 'page', $page);
+
+        $paginator->through(function ($note) {
+            return $this->transformNote($note, false);
+        });
+
+        return $this->formatPaginatorOutput($paginator);
+    }
+
 }

@@ -35,5 +35,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix("/authors")->group(function() {
         Route::get('/{authorId}/notes', [NoteController::class, 'getByAuthor']);
         Route::get('/{authorId}/follows', [UserController::class, 'followToggle']);
+        Route::get('/{authorId}/stats', [UserController::class, 'getStats']);
+    });
+
+    Route::prefix("/my")->group(function() {
+        Route::get('/notes', [NoteController::class, 'myNotes']);
+        Route::get('/follows', [UserController::class, 'myFollowStats']);
     });
 });

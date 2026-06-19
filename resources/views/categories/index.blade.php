@@ -16,7 +16,7 @@
 
         <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold">Kategori</h2>
-            <a href="/dashboard" class="text-sm text-gray-400 hover:text-gray-600">← Dashboard</a>
+            <a href="/home" class="text-sm text-gray-400 hover:text-gray-600">← Homepage</a>
         </div>
 
         <!-- Loading Skeleton -->
