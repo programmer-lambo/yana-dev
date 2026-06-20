@@ -10,7 +10,6 @@ class CategoryController extends Controller
 {
     protected $categoryService;
 
-    // Inject service kategori lewat constructor
     public function __construct(CategoryService $categoryService)
     {
         $this->categoryService = $categoryService;

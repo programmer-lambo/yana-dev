@@ -19,13 +19,6 @@ Route::redirect('/dashboard', '/dashboard/notes', 301);
 Route::view('/dashboard/notes/create','dashboard.notes-create')->name('dashboard.notes.create');
 Route::view('/dashboard/notes/{slug}/edit','dashboard.notes-edit')->name('dashboard.notes.edit');
 
-// Route::get('/notes/{slug}', function(){ 
-//     return view('notes.show');
-// })->name('notes.show');
-
-// Route::get('/categories', fn() => view('categories.index'))->name('categories.index');
-// Route::get('/categories/{id}/notes', fn() => view('categories.notes'))->name('categories.notes');
-
 Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();

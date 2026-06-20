@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\Category;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class NoteService
@@ -68,7 +67,7 @@ class NoteService
     {
         $paginator = Note::with(['author:id,name', 'category:id,name'])
             ->where('is_indexed', true)
-            ->latest()
+            ->orderBy('created_at', 'asc')
             ->paginate(10, ['*'], 'page', $page);
 
         $paginator->through(function ($note) {
